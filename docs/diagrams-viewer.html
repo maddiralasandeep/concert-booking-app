@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concert Booking App - Architecture Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .diagram-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .mermaid {
+            text-align: center;
+        }
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand">🎵 Concert Booking App - Architecture Diagrams</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- High-Level Architecture -->
+        <div class="diagram-container">
+            <h2>🏗️ High-Level System Architecture</h2>
+            <p class="text-muted">Complete system overview showing all layers and components</p>
+            <div class="mermaid">
+                graph TB
+                    subgraph "Client Layer"
+                        Browser[Web Browser]
+                        Mobile[Mobile Browser]
+                    end
+
+                    subgraph "Frontend Layer - Vue.js SPA"
+                        VueApp[Vue.js Application]
+                        Router[Vue Router]
+                        Components[Vue Components]
+                        ApiService[API Service Layer]
+                    end
+
+                    subgraph "Backend Layer - Django"
+                        DjangoApp[Django Application]
+                        RestAPI[Django REST Framework]
+                        Models[Django Models]
+                        Admin[Django Admin]
+                    end
+
+                    subgraph "Database Layer"
+                        SQLite[(SQLite Database)]
+                    end
+
+                    subgraph "External Services"
+                        Unsplash[Unsplash Images API]
+                        Bootstrap[Bootstrap CDN]
+                        FontAwesome[Font Awesome CDN]
+                    end
+
+                    Browser --> VueApp
+                    Mobile --> VueApp
+                    VueApp --> Router
+                    Router --> Components
+                    Components --> ApiService
+                    ApiService -->|HTTP/REST API| RestAPI
+                    RestAPI --> DjangoApp
+                    DjangoApp --> Models
+                    Models --> SQLite
+                    Admin --> Models
+                    Components --> Bootstrap
+                    Components --> FontAwesome
+                    Components --> Unsplash
+            </div>
+        </div>
+
+        <!-- Component Architecture -->
+        <div class="diagram-container">
+            <h2>🧩 Component Architecture</h2>
+            <p class="text-muted">Detailed view of how frontend and backend components interact</p>
+            <div class="mermaid">
+                graph LR
+                    subgraph "Frontend Components"
+                        App[App.vue]
+                        Home[Home.vue]
+                        Details[ConcertDetails.vue]
+                        Booking[BookingConfirmation.vue]
+                        MyBookings[MyBookings.vue]
+                    end
+
+                    subgraph "Frontend Services"
+                        API[api.js]
+                        Router[router/index.js]
+                    end
+
+                    subgraph "Backend Views"
+                        ConcertList[ConcertListCreateView]
+                        ConcertDetail[ConcertDetailView]
+                        BookingList[BookingListView]
+                        BookingDetail[BookingDetailView]
+                        CreateBooking[create_booking]
+                    end
+
+                    subgraph "Backend Models"
+                        Concert[Concert Model]
+                        BookingModel[Booking Model]
+                    end
+
+                    App --> Home
+                    App --> Details
+                    App --> Booking
+                    App --> MyBookings
+                    
+                    Home --> API
+                    Details --> API
+                    Booking --> API
+                    MyBookings --> API
+                    
+                    API --> ConcertList
+                    API --> ConcertDetail
+                    API --> BookingList
+                    API --> BookingDetail
+                    API --> CreateBooking
+                    
+                    ConcertList --> Concert
+                    ConcertDetail --> Concert
+                    BookingList --> BookingModel
+                    BookingDetail --> BookingModel
+                    CreateBooking --> BookingModel
+                    CreateBooking --> Concert
+            </div>
+        </div>
+
+        <!-- Data Flow -->
+        <div class="diagram-container">
+            <h2>🔄 Data Flow Diagram</h2>
+            <p class="text-muted">How data flows through the system during user interactions</p>
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User
+                    participant Vue as Vue.js Frontend
+                    participant API as Django REST API
+                    participant DB as SQLite Database
+
+                    Note over User, DB: Concert Browsing Flow
+                    User->>Vue: Visit Home Page
+                    Vue->>API: GET /api/concerts/
+                    API->>DB: SELECT * FROM concerts
+                    DB-->>API: Concert Data
+                    API-->>Vue: JSON Response
+                    Vue-->>User: Display Concert Grid
+
+                    Note over User, DB: Concert Booking Flow
+                    User->>Vue: Click "Book Now"
+                    Vue->>API: GET /api/concerts/{id}/
+                    API->>DB: SELECT concert details
+                    DB-->>API: Concert Data
+                    API-->>Vue: Concert Details
+                    Vue-->>User: Show Booking Form
+                    
+                    User->>Vue: Submit Booking Form
+                    Vue->>API: POST /api/bookings/
+                    API->>DB: INSERT booking record
+                    API->>DB: UPDATE concert tickets
+                    DB-->>API: Success
+                    API-->>Vue: Booking Confirmation
+                    Vue-->>User: Show Success Page
+            </div>
+        </div>
+
+        <!-- Database Schema -->
+        <div class="diagram-container">
+            <h2>🗄️ Database Schema (ERD)</h2>
+            <p class="text-muted">Entity Relationship Diagram showing database structure</p>
+            <div class="mermaid">
+                erDiagram
+                    CONCERT {
+                        int id PK
+                        varchar title
+                        varchar artist
+                        varchar venue
+                        datetime date
+                        decimal price
+                        int available_tickets
+                        text description
+                        varchar image_url
+                        datetime created_at
+                        datetime updated_at
+                    }
+
+                    BOOKING {
+                        int id PK
+                        int concert_id FK
+                        varchar customer_name
+                        varchar customer_email
+                        int tickets_booked
+                        datetime booking_date
+                        decimal total_amount
+                    }
+
+                    CONCERT ||--o{ BOOKING : "has many"
+            </div>
+        </div>
+
+        <!-- Technology Stack -->
+        <div class="diagram-container">
+            <h2>⚡ Technology Stack</h2>
+            <p class="text-muted">All technologies and frameworks used in the application</p>
+            <div class="mermaid">
+                graph TB
+                    subgraph "Frontend Stack"
+                        Vue3[Vue.js 3]
+                        VueRouter[Vue Router 4]
+                        Axios[Axios HTTP Client]
+                        Bootstrap5[Bootstrap 5]
+                        FontAwesome6[Font Awesome 6]
+                    end
+
+                    subgraph "Backend Stack"
+                        Django4[Django 4.2]
+                        DRF[Django REST Framework]
+                        CORS[Django CORS Headers]
+                        SQLite3[SQLite 3]
+                    end
+
+                    subgraph "Development Tools"
+                        VueCLI[Vue CLI]
+                        DjangoAdmin[Django Admin]
+                        NPM[NPM Package Manager]
+                        PIP[PIP Package Manager]
+                    end
+
+                    Vue3 --> VueRouter
+                    Vue3 --> Axios
+                    Vue3 --> Bootstrap5
+                    Vue3 --> FontAwesome6
+                    
+                    Django4 --> DRF
+                    Django4 --> CORS
+                    Django4 --> SQLite3
+                    
+                    VueCLI --> Vue3
+                    DjangoAdmin --> Django4
+                    NPM --> VueCLI
+                    PIP --> Django4
+            </div>
+        </div>
+
+        <!-- UML Class Diagram - Backend Models -->
+        <div class="diagram-container">
+            <h2>📋 UML Class Diagram - Backend Models</h2>
+            <p class="text-muted">Django models with all attributes and relationships</p>
+            <div class="mermaid">
+                classDiagram
+                    class Concert {
+                        +int id
+                        +string title
+                        +string artist
+                        +string venue
+                        +datetime date
+                        +decimal price
+                        +int available_tickets
+                        +text description
+                        +string image_url
+                        +datetime created_at
+                        +datetime updated_at
+                        +to_dict() dict
+                        +__str__() string
+                    }
+
+                    class Booking {
+                        +int id
+                        +int concert_id
+                        +string customer_name
+                        +string customer_email
+                        +int tickets_booked
+                        +datetime booking_date
+                        +decimal total_amount
+                        +to_dict() dict
+                        +save() void
+                        +__str__() string
+                    }
+
+                    Concert ||--o{ Booking : "has many bookings"
+            </div>
+        </div>
+
+        <!-- UML Class Diagram - Frontend Components -->
+        <div class="diagram-container">
+            <h2>🧩 UML Class Diagram - Frontend Components</h2>
+            <p class="text-muted">Vue.js components with properties, methods, and relationships</p>
+            <div class="mermaid">
+                classDiagram
+                    class App {
+                        +string name
+                        +render() template
+                    }
+
+                    class Home {
+                        +array concerts
+                        +array filteredConcerts
+                        +string searchQuery
+                        +boolean loading
+                        +string error
+                        +loadConcerts() void
+                        +filterConcerts() void
+                        +formatDate() string
+                    }
+
+                    class ConcertDetails {
+                        +object concert
+                        +boolean loading
+                        +string error
+                        +boolean bookingLoading
+                        +object bookingForm
+                        +loadConcert() void
+                        +submitBooking() void
+                        +formatDate() string
+                    }
+
+                    class BookingConfirmation {
+                        +object booking
+                        +boolean loading
+                        +string error
+                        +loadBooking() void
+                        +formatDate() string
+                    }
+
+                    class MyBookings {
+                        +array bookings
+                        +boolean loading
+                        +string error
+                        +loadBookings() void
+                        +formatDate() string
+                    }
+
+                    class ApiService {
+                        +string API_BASE_URL
+                        +getConcerts() Promise
+                        +getConcert(id) Promise
+                        +createConcert(data) Promise
+                        +createBooking(data) Promise
+                        +getBookings() Promise
+                        +getBooking(id) Promise
+                    }
+
+                    App --> Home : routes_to
+                    App --> ConcertDetails : routes_to
+                    App --> BookingConfirmation : routes_to
+                    App --> MyBookings : routes_to
+                    
+                    Home --> ApiService : uses
+                    ConcertDetails --> ApiService : uses
+                    BookingConfirmation --> ApiService : uses
+                    MyBookings --> ApiService : uses
+            </div>
+        </div>
+
+        <!-- UML Class Diagram - API Serializers -->
+        <div class="diagram-container">
+            <h2>🔄 UML Class Diagram - API Serializers</h2>
+            <p class="text-muted">Django REST Framework serializers and their relationships</p>
+            <div class="mermaid">
+                classDiagram
+                    class ConcertSerializer {
+                        +Meta model
+                        +array fields
+                        +array read_only_fields
+                        +validate() dict
+                        +create() Concert
+                        +update() Concert
+                    }
+
+                    class BookingSerializer {
+                        +Meta model
+                        +array fields
+                        +array read_only_fields
+                        +ConcertSerializer concert
+                        +int concert_id
+                        +validate() dict
+                        +create() Booking
+                    }
+
+                    class BookingCreateSerializer {
+                        +Meta model
+                        +array fields
+                    }
+
+                    ConcertSerializer --> Concert : serializes
+                    BookingSerializer --> Booking : serializes
+                    BookingSerializer --> ConcertSerializer : includes
+                    BookingCreateSerializer --> Booking : creates
+            </div>
+        </div>
+
+        <!-- UML Class Diagram - API Views -->
+        <div class="diagram-container">
+            <h2>🎯 UML Class Diagram - API Views</h2>
+            <p class="text-muted">Django REST Framework views and their operations</p>
+            <div class="mermaid">
+                classDiagram
+                    class ConcertListCreateView {
+                        +QuerySet queryset
+                        +Serializer serializer_class
+                        +get() Response
+                        +post() Response
+                    }
+
+                    class ConcertDetailView {
+                        +QuerySet queryset
+                        +Serializer serializer_class
+                        +get() Response
+                        +put() Response
+                        +delete() Response
+                    }
+
+                    class BookingListView {
+                        +QuerySet queryset
+                        +Serializer serializer_class
+                        +get() Response
+                    }
+
+                    class BookingDetailView {
+                        +QuerySet queryset
+                        +Serializer serializer_class
+                        +get() Response
+                    }
+
+                    class CreateBookingView {
+                        +post() Response
+                    }
+
+                    ConcertListCreateView --> Concert : manages
+                    ConcertDetailView --> Concert : manages
+                    BookingListView --> Booking : manages
+                    BookingDetailView --> Booking : manages
+                    CreateBookingView --> Booking : creates
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+</body>
+</html>
