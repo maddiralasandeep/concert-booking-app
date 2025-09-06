@@ -39,7 +39,7 @@ jobs:
       working-directory: ./backend
       env:
         DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-        DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       run: |
         python manage.py test
 
