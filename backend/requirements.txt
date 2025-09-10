@@ -14,7 +14,6 @@ typing-extensions>=4.7.1
 pytz>=2023.3
 
 # Testing
-django-pytest>=4.5.2,<5.0.0
 pytest>=8.1.1,<9.0.0
 pytest-django>=4.8.0,<5.0.0
 pytest-cov>=4.1.0,<5.0.0
