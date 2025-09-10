@@ -64,18 +64,27 @@ jobs:
         # Install package in development mode
         python -m pip install -e .
         
+        # Install test dependencies
+        python -m pip install pytest-django pytest-cov
+        
         # Check Django setup
         python manage.py check
         
         # Collect static files for testing
         python manage.py collectstatic --noinput || true
         
-        # Run tests with coverage
-        python -m pip install pytest-cov
-        python -m pytest --cov=concerts --cov-report=xml
+        # Run migrations
+        python manage.py migrate --noinput
         
-        # Run Django's test suite
-        python manage.py test --noinput
+        # List all test files for debugging
+        echo "Test files found:"
+        find . -name "test_*.py" -o -name "*_test.py" -o -name "tests.py" | sort
+        
+        # Run tests with detailed output
+        python -m pytest -v --ds=concertbooking.settings --cov=concerts --cov-report=xml
+        
+        # Run Django's test suite with more verbosity
+        python manage.py test --noinput -v 2
 
   deploy:
     needs: test
