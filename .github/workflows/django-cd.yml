@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.12.3'
   POSTGRES_VERSION: '15'
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
 
@@ -32,10 +32,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python 3.12.3
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: '3.12.3'
         cache: 'pip'
         
     - name: Install system dependencies
@@ -67,10 +67,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python 3.12.3
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: '3.12.3'
         
     - name: Install system dependencies
       run: |

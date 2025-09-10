@@ -22,13 +22,17 @@ sudo apt-get install -y \
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Install Python 3.12
+# Install Python 3.12.3
 sudo add-apt-repository ppa:deadsnakes/ppa -y
 sudo apt-get update
-sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
+sudo apt-get install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils
 
 # Set Python 3.12 as the default
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+
+# Ensure pip is installed for Python 3.12
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
 # Install and configure PostgreSQL
 sudo -u postgres psql -c "CREATE DATABASE concert_db;"
