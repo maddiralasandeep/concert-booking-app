@@ -53,14 +53,29 @@ jobs:
       working-directory: ./backend
       env:
         DATABASE_URL: ${{ env.DATABASE_URL }}
-        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key' }}
         DEBUG: 'False'
         PYTHONPATH: ${{ github.workspace }}/backend
+        DJANGO_SETTINGS_MODULE: concertbooking.settings
       run: |
+        # Create static files directory
+        mkdir -p staticfiles
+        
+        # Install package in development mode
         python -m pip install -e .
+        
+        # Check Django setup
         python manage.py check
+        
+        # Collect static files for testing
+        python manage.py collectstatic --noinput || true
+        
+        # Run tests with coverage
+        python -m pip install pytest-cov
+        python -m pytest --cov=concerts --cov-report=xml
+        
+        # Run Django's test suite
         python manage.py test --noinput
-        python -m pytest
 
   deploy:
     needs: test
