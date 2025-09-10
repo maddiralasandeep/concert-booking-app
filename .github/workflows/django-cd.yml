@@ -55,7 +55,10 @@ jobs:
         DATABASE_URL: ${{ env.DATABASE_URL }}
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         DEBUG: 'False'
+        PYTHONPATH: ${{ github.workspace }}/backend
       run: |
+        python -m pip install -e .
+        python manage.py check
         python manage.py test --noinput
         python -m pytest
 
