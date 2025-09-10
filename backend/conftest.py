@@ -5,6 +5,7 @@ from pathlib import Path
 import django
 from django.conf import settings
 
+@pytest.mark.django_db
 def pytest_configure():
     """Configure pytest for Django tests."""
     # Add the project to the Python path
