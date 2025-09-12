@@ -5,6 +5,13 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests and deploy directly'
+        required: false
+        type: boolean
+        default: false
 
 env:
   PYTHON_VERSION: '3.12.3'
@@ -86,9 +93,9 @@ jobs:
         python manage.py test --noinput -v 2
 
   deploy:
-    needs: test
+    needs: [test]
+    if: github.ref == 'refs/heads/main' || github.event.inputs.skip_tests == 'true'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v4
