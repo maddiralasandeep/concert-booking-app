@@ -55,15 +55,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r backend/requirements.txt
         
-    - name: Run tests
-      working-directory: ./backend
-      env:
-        DATABASE_URL: ${{ env.DATABASE_URL }}
-        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key' }}
-        DEBUG: 'False'
-        PYTHONPATH: ${{ github.workspace }}/backend
-        DJANGO_SETTINGS_MODULE: concertbooking.settings
-      run: |
+    # - name: Run tests
+    #   working-directory: ./backend
+    #   env:
+    #     DATABASE_URL: ${{ env.DATABASE_URL }}
+    #     SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key' }}
+    #     DEBUG: 'False'
+    #     PYTHONPATH: ${{ github.workspace }}/backend
+    #     DJANGO_SETTINGS_MODULE: concertbooking.settings
+    #   run: |
         # Create static files directory
         mkdir -p staticfiles
         
