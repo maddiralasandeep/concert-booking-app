@@ -64,17 +64,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'concertbooking.wsgi.application'
 
 # Database
-default_db = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
 DATABASES = {
-    'default': dj_database_url.config(
-        default=default_db,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
-# Force PostgreSQL if DATABASE_URL is set
-if os.environ.get('DATABASE_URL', '').startswith('postgres'):
+# Override with PostgreSQL if DATABASE_URL is set
+if 'DATABASE_URL' in os.environ:
+    import dj_database_url
+    db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    DATABASES['default'].update(db_from_env)
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 
 # Password validation

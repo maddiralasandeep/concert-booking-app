@@ -65,6 +65,26 @@ jobs:
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
+          
+      - name: Run database migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          SECRET_KEY: test-secret-key
+          DEBUG: 'False'
+        run: |
+          python manage.py migrate --noinput
+          
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          SECRET_KEY: test-secret-key
+          DEBUG: 'False'
+          PYTHONPATH: ${{ github.workspace }}/backend
+          DJANGO_SETTINGS_MODULE: concertbooking.settings
+        run: |
+          python manage.py test --noinput -v 3
 
       # - name: Run tests
       #   working-directory: ./backend
