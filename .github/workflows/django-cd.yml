@@ -69,7 +69,7 @@ jobs:
       - name: Run database migrations
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?ssl_mode=disbaled
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?sslmode=disable
           DB_SSL_REQUIRE: 'false'
           SECRET_KEY: test-secret-key
           DEBUG: 'False'

@@ -76,11 +76,16 @@ if 'DATABASE_URL' in os.environ:
     import dj_database_url
     db_from_env = dj_database_url.config(
         conn_max_age=600,
-        ssl_require=True if os.environ.get('DB_SSL_REQUIRE', 'false').lower() == 'true' else False
+        ssl_require=False  # Disable SSL for GitHub Actions
     )
     DATABASES['default'].update(db_from_env)
     # Ensure the engine is set to PostgreSQL
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+    # Add OPTIONS to disable SSL if needed
+    if 'sslmode=disable' in os.environ.get('DATABASE_URL', ''):
+        DATABASES['default']['OPTIONS'] = {
+            'sslmode': 'disable'
+        }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
