@@ -70,10 +70,13 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db?sslmode=disable
-          DB_SSL_REQUIRE: 'false'
           SECRET_KEY: test-secret-key
-          DEBUG: 'False'
+          DEBUG: 'True'  # Enable debug for more detailed error messages
         run: |
+          # Print debug info
+          echo "Current directory: $(pwd)"
+          echo "Database URL: $DATABASE_URL"
+          # Run migrations
           python manage.py migrate --noinput
           
       # - name: Run tests

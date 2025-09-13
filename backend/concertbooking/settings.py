@@ -67,25 +67,34 @@ WSGI_APPLICATION = 'concertbooking.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': str(BASE_DIR / 'db.sqlite3'),  # Convert to string to avoid PosixPath issues
     }
 }
 
 # Override with PostgreSQL if DATABASE_URL is set
 if 'DATABASE_URL' in os.environ:
     import dj_database_url
-    db_from_env = dj_database_url.config(
+    db_from_env = dj_database_url.parse(
+        os.environ['DATABASE_URL'],
         conn_max_age=600,
-        ssl_require=False  # Disable SSL for GitHub Actions
     )
+    # Convert any PosixPath objects to strings
+    if 'NAME' in db_from_env and hasattr(db_from_env['NAME'], '__fspath__'):
+        db_from_env['NAME'] = str(db_from_env['NAME'])
+    
+    # Update the default database configuration
     DATABASES['default'].update(db_from_env)
+    
     # Ensure the engine is set to PostgreSQL
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-    # Add OPTIONS to disable SSL if needed
+    
+    # Set default options if not present
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    
+    # Disable SSL if specified in the URL
     if 'sslmode=disable' in os.environ.get('DATABASE_URL', ''):
-        DATABASES['default']['OPTIONS'] = {
-            'sslmode': 'disable'
-        }
+        DATABASES['default']['OPTIONS']['sslmode'] = 'disable'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
