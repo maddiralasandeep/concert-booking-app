@@ -74,8 +74,12 @@ DATABASES = {
 # Override with PostgreSQL if DATABASE_URL is set
 if 'DATABASE_URL' in os.environ:
     import dj_database_url
-    db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    db_from_env = dj_database_url.config(
+        conn_max_age=600,
+        ssl_require=True if os.environ.get('DB_SSL_REQUIRE', 'false').lower() == 'true' else False
+    )
     DATABASES['default'].update(db_from_env)
+    # Ensure the engine is set to PostgreSQL
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 
 # Password validation
