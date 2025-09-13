@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',  # Add whitenoise
     'rest_framework',
     'corsheaders',
     'concerts',
@@ -63,17 +64,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'concertbooking.wsgi.application'
 
 # Database
-if 'DATABASE_URL' in os.environ:
-    DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+default_db = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
+DATABASES = {
+    'default': dj_database_url.config(
+        default=default_db,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
+
+# Force PostgreSQL if DATABASE_URL is set
+if os.environ.get('DATABASE_URL', '').startswith('postgres'):
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

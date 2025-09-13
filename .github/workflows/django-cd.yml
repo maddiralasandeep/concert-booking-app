@@ -55,14 +55,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432 -U postgres -d test_db; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
       # - name: Run tests
       #   working-directory: ./backend
       #   env:
-      #     POSTGRES_DB: test_db
-      #     POSTGRES_USER: postgres
-      #     POSTGRES_PASSWORD: postgres
-      #     POSTGRES_HOST: localhost
-      #     POSTGRES_PORT: 5432
+      #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
       #     SECRET_KEY: test-secret-key
       #     DEBUG: 'False'
       #     PYTHONPATH: ${{ github.workspace }}/backend
@@ -73,6 +80,12 @@ jobs:
 
       #     # Install package in development mode
       #     python -m pip install -e .
+          
+      #     # Run migrations
+      #     python manage.py migrate --noinput
+          
+      #     # Run tests
+      #     python manage.py test --noinput -v 3
 
       #     # Check Django setup
       #     python manage.py check
