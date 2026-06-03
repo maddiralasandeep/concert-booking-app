@@ -70,13 +70,14 @@ Your concert booking app can be deployed using several approaches. Here are the 
 
 ## 📋 **Pre-Deployment Checklist**
 
-### Backend Preparation
-- [ ] Configure production database (PostgreSQL)
+### Backend Preparation (SQLite)
+- [ ] Ensure db.sqlite3 location is writable on server
 - [ ] Set environment variables
 - [ ] Configure static files
 - [ ] Update CORS settings
 - [ ] Set DEBUG=False
 - [ ] Configure allowed hosts
+- [ ] Update ALLOWED_HOSTS in settings.py with your domain/IP
 
 ### Frontend Preparation
 - [ ] Update API base URL for production
@@ -84,79 +85,246 @@ Your concert booking app can be deployed using several approaches. Here are the 
 - [ ] Configure routing for SPA
 - [ ] Optimize assets
 
-## 🛠️ **Detailed Deployment Steps**
+## 🛠️ **Detailed Deployment Steps for EC2 (SQLite)**
 
-### For Netlify + Railway Deployment:
-
-#### Step 1: Prepare Backend for Railway
+### Step 1: Prepare Backend for EC2
 ```python
-# Add to settings.py
-import os
-from pathlib import Path
+# In settings.py - Update these settings:
 
-# Production settings
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['*']  # Configure properly in production
+# Set DEBUG to False
+DEBUG = False
 
-# Database
-if 'DATABASE_URL' in os.environ:
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
+# Set proper ALLOWED_HOSTS
+ALLOWED_HOSTS = ['your-ec2-ip', 'your-domain.com', '127.0.0.1']
+
+# Update CORS for production
+CORS_ALLOWED_ORIGINS = [
+    "http://your-ec2-ip",
+    "https://your-domain.com",
+    "http://localhost:8080",  # Keep for testing if needed
+]
+
+# Database (SQLite - already configured)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': str(BASE_DIR / 'db.sqlite3'),
     }
+}
 
-# Static files
+# Ensure static files are configured
+STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 ```
 
-#### Step 2: Create Railway Configuration
-```toml
-# railway.toml
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn concertbooking.wsgi"
-```
-
-#### Step 3: Update Requirements
-```txt
-# Add to requirements.txt
-gunicorn==21.2.0
-dj-database-url==2.1.0
-psycopg2-binary==2.9.7
-whitenoise==6.5.0
-```
-
-#### Step 4: Prepare Frontend for Netlify
-```javascript
-// Update API base URL in src/services/api.js
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-railway-app.railway.app/api'
-  : 'http://localhost:8000/api'
-```
-
-#### Step 5: Build Frontend
+### Step 2: Create Simplified Setup Script for EC2 (SQLite)
 ```bash
-cd frontend
+#!/bin/bash
+# Setup for EC2 with SQLite
+
+# Update system
+sudo apt-get update && sudo apt-get upgrade -y
+
+# Install dependencies (NO PostgreSQL needed)
+sudo apt-get install -y \
+    python3-pip \
+    python3-dev \
+    nginx \
+    git \
+    curl \
+    python3-venv \
+    supervisor
+
+# Install Node.js for frontend
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Create app directory
+mkdir -p /home/ubuntu/concert-booking-app
+cd /home/ubuntu/concert-booking-app
+
+# Set up Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Clone your repository
+git clone https://github.com/your-username/concert-booking-app.git .
+
+# Install Python dependencies
+pip install --upgrade pip
+pip install -r backend/requirements.txt
+
+# Create Gunicorn socket directory
+mkdir -p /run/gunicorn
+
+# Set permissions
+sudo chown ubuntu:www-data /home/ubuntu/concert-booking-app
+sudo chmod 755 /home/ubuntu/concert-booking-app
+
+echo "Setup completed!"
+```
+
+### Step 3: Run Migrations and Populate Data
+```bash
+cd /home/ubuntu/concert-booking-app/backend
+source ../venv/bin/activate
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser (optional)
+python manage.py createsuperuser
+
+# Populate sample data
+python manage.py populate_sample_data
+
+# Collect static files
+python manage.py collectstatic --noinput
+```
+
+### Step 4: Set Up Gunicorn Service
+```bash
+# Create systemd service file
+sudo tee /etc/systemd/system/gunicorn.service > /dev/null <<EOL
+[Unit]
+Description=Gunicorn service for Concert Booking App
+After=network.target
+
+[Service]
+Type=notify
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/concert-booking-app/backend
+Environment="PATH=/home/ubuntu/concert-booking-app/venv/bin"
+ExecStart=/home/ubuntu/concert-booking-app/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/gunicorn/concertbooking.sock \
+    --error-logfile /var/log/gunicorn/error.log \
+    --access-logfile /var/log/gunicorn/access.log \
+    concertbooking.wsgi:application
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Create log directory
+sudo mkdir -p /var/log/gunicorn
+sudo chown ubuntu:www-data /var/log/gunicorn
+
+# Enable and start service
+sudo systemctl daemon-reload
+sudo systemctl enable gunicorn
+sudo systemctl start gunicorn
+```
+
+### Step 5: Build and Deploy Frontend
+```bash
+cd /home/ubuntu/concert-booking-app/frontend
+
+# Update API URL in src/services/api.js
+# Change line: const API_BASE_URL = 'http://localhost:8000/api'
+# To: const API_BASE_URL = 'http://your-ec2-ip/api'
+
+# Build frontend
+npm install
 npm run build
-# Upload dist/ folder to Netlify
+
+# Copy to Nginx directory
+sudo mkdir -p /var/www/concert-app
+sudo cp -r dist/* /var/www/concert-app/
+sudo chown -R www-data:www-data /var/www/concert-app
+```
+
+### Step 6: Configure Nginx
+```bash
+sudo tee /etc/nginx/sites-available/concert_booking > /dev/null <<EOL
+server {
+    listen 80;
+    server_name your_ec2_ip your_domain;
+
+    client_max_body_size 20M;
+
+    # Frontend
+    location / {
+        root /var/www/concert-app;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Backend API
+    location /api/ {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn/concertbooking.sock;
+    }
+
+    # Admin panel
+    location /admin/ {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn/concertbooking.sock;
+    }
+
+    # Static files
+    location /static/ {
+        alias /home/ubuntu/concert-booking-app/backend/staticfiles/;
+    }
+
+    # Deny access to db.sqlite3
+    location ~ /db\.sqlite3 {
+        deny all;
+    }
+}
+EOL
+
+# Enable site
+sudo ln -s /etc/nginx/sites-available/concert_booking /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test and reload
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### Step 7: Set Up SSL Certificate (Let's Encrypt)
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+### Step 8: Configure Firewall
+```bash
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw --force enable
+```
+
+## 🌐 **Environment Variables for Production**
+
+Create `.env` file in `/home/ubuntu/concert-booking-app/backend/`:
+```env
+DEBUG=False
+SECRET_KEY=your-super-secret-key-change-this
+ALLOWED_HOSTS=your-ec2-ip,your-domain.com
+CORS_ALLOWED_ORIGINS=http://your-ec2-ip,https://your-domain.com
 ```
 
 ## 🌐 **Environment Variables Needed**
 
-### Backend (Railway/Render)
+### Backend (EC2)
 ```env
 DEBUG=False
 SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://...
-ALLOWED_HOSTS=your-domain.com
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.netlify.app
+ALLOWED_HOSTS=your-domain.com,your-ec2-ip,127.0.0.1
+CORS_ALLOWED_ORIGINS=https://your-frontend-domain,http://your-ec2-ip
 ```
 
-### Frontend (Netlify/Vercel)
-```env
-VUE_APP_API_URL=https://your-backend-domain.railway.app/api
+### Frontend (Update API URL)
+```javascript
+// src/services/api.js
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'http://your-ec2-ip/api'  // or https://your-domain.com/api after SSL setup
+  : 'http://localhost:8000/api'
 ```
 
 ## 🔒 **Security Considerations**
@@ -182,22 +350,30 @@ VUE_APP_API_URL=https://your-backend-domain.railway.app/api
 - **Analytics**: Google Analytics
 - **Logs**: CloudWatch/Papertrail
 
-## 💰 **Cost Estimates**
+## 💰 **Cost Estimates (AWS EC2)**
 
-### Free Tier (Development/Small Scale)
-- **Netlify**: Free (100GB bandwidth)
-- **Railway**: Free tier available
-- **Total**: $0/month
+### Development (Free Tier)
+- **EC2**: t2.micro - Free for 12 months (new AWS accounts)
+- **Storage**: 30GB EBS - Free for 12 months
+- **Total**: $0/month (first year)
+
+### Production (Small Scale)
+- **EC2**: t3.medium - ~$30/month
+- **Storage**: 50GB EBS - ~$5/month
+- **Data Transfer**: Included (up to 100GB/month free)
+- **Total**: ~$35-40/month
 
 ### Production (Medium Scale)
-- **Netlify Pro**: $19/month
-- **Railway Pro**: $20/month
-- **Total**: ~$39/month
+- **EC2**: t3.large - ~$60/month
+- **Storage**: 100GB EBS - ~$10/month
+- **Backup**: Snapshots - ~$5/month
+- **Total**: ~$75/month
 
-### Enterprise (High Scale)
-- **AWS/GCP**: $100-500/month depending on traffic
-- **CDN**: $20-100/month
-- **Database**: $50-200/month
+### Notes on SQLite
+- ✅ No separate database costs
+- ✅ Backups are just file copies
+- ⚠️ Not recommended for 1000+ concurrent users
+- 💡 Works great for small-medium applications
 
 ## 🎯 **Recommended Deployment Path**
 
